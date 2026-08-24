@@ -75,3 +75,18 @@ invoke the actual interpreter directly, e.g.
   every open view on every write, which is unacceptable UX for a
   rapid-fire quiz that persists after every answer.
 - Only 36 sample notes are embedded, not the full 1,501-word deck.
+
+## Scope
+
+This is deliberately Kaishi-only for now — hardcoded to the Kaishi 1.5k
+notetype's field names and to Japanese-specific reading logic (kana/romaji
+conversion, sokuon/chōonpu handling). See the field-mapping and
+grading-logic notes above for exactly what's coupled to it.
+
+The intent is to eventually generalize this to work with any Anki deck,
+any language. That's not implemented yet — no point abstracting before a
+second real deck exists to design against. When that happens, the two
+things to change are: (1) a field-mapping step instead of hardcoded field
+names in `build_final_html.py`, so any notetype's fields can be assigned
+to word/reading/meaning/audio; (2) gating the kana/romaji grading logic
+behind "is this a Japanese deck" instead of assuming it always applies.
