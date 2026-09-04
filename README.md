@@ -76,6 +76,16 @@ invoke the actual interpreter directly, e.g.
   rapid-fire quiz that persists after every answer.
 - Only 36 sample notes are embedded, not the full 1,501-word deck.
 
+## Standalone web app roadmap
+
+The approved direction is a modular, offline-first web app that imports the
+user's Anki package locally, supports either fresh or continued progress,
+uses FSRS for typed reading/English-meaning reviews, preserves the deck's
+images and audio, and includes a separate DJT-inspired Kana Trainer.
+
+- [Product and architecture design](docs/superpowers/specs/2026-09-05-kaishi-drill-standalone-webapp-design.md)
+- [Test-driven implementation plan](docs/superpowers/plans/2026-09-05-kaishi-drill-webapp.md)
+
 ## Scope
 
 This is deliberately Kaishi-only for now — hardcoded to the Kaishi 1.5k
