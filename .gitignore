@@ -1,0 +1,12 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+*.apkg
+*.colpkg
+*.anki2
+*.anki21
+*.anki21b
+private-data/
+private-reports/
+*.tsbuildinfo

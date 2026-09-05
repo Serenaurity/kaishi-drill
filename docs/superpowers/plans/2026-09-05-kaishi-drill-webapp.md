@@ -325,7 +325,7 @@ git commit -m "build: scaffold Kaishi web app"
 - Create: `src/storage/db.test.ts`
 
 **Interfaces:**
-- Produces: the spec's `DeckRecord`, `NoteRecord`, `SkillCardRecord`, `ScheduleRecord`, `ReviewEventRecord`, `ImportedAnkiReviewRecord`, `MediaRecord`, `KanaSkillRecord`, and `DailyActivityRecord` interfaces.
+- Produces: the spec's `DeckRecord`, `NoteRecord`, `ImportedAnkiCardRecord`, `SkillCardRecord`, `ScheduleRecord`, `ReviewEventRecord`, `ImportedAnkiReviewRecord`, `MediaRecord`, `KanaSkillRecord`, and `DailyActivityRecord` interfaces.
 - Produces: `openKaishiDb(name?: string): KaishiDb`.
 - Produces: `deleteKaishiDb(name: string): Promise<void>` for isolated tests only.
 
@@ -341,7 +341,7 @@ it("opens schema version one with every required store", async () => {
   const db = openKaishiDb(name);
   await db.open();
   expect(db.tables.map((table) => table.name).sort()).toEqual([
-    "ankiReviews", "dailyActivity", "decks", "imports", "kanaSkills",
+    "ankiCards", "ankiReviews", "dailyActivity", "decks", "imports", "kanaSkills",
     "media", "notes", "reviewEvents", "schedules", "settings", "skillCards",
   ]);
   db.close();
@@ -363,13 +363,14 @@ Expected: FAIL with an unresolved `./db` import.
 // src/storage/db.ts
 import Dexie, { type EntityTable } from "dexie";
 import type {
-  DailyActivityRecord, DeckRecord, ImportedAnkiReviewRecord, KanaSkillRecord,
+  DailyActivityRecord, DeckRecord, ImportedAnkiCardRecord, ImportedAnkiReviewRecord, KanaSkillRecord,
   MediaRecord, NoteRecord, ReviewEventRecord, ScheduleRecord, SkillCardRecord,
 } from "../domain/models";
 
 export class KaishiDb extends Dexie {
   decks!: EntityTable<DeckRecord, "id">;
   notes!: EntityTable<NoteRecord, "id">;
+  ankiCards!: EntityTable<ImportedAnkiCardRecord, "id">;
   skillCards!: EntityTable<SkillCardRecord, "id">;
   schedules!: EntityTable<ScheduleRecord, "skillCardId">;
   reviewEvents!: EntityTable<ReviewEventRecord, "id">;
@@ -385,6 +386,7 @@ export class KaishiDb extends Dexie {
     this.version(1).stores({
       decks: "id, ankiDeckId, importedAt",
       notes: "id, deckId, ankiNoteId, [deckId+ankiNoteId]",
+      ankiCards: "id, deckId, noteId, sourceAnkiCardId, [deckId+sourceAnkiCardId]",
       skillCards: "id, noteId, sourceAnkiCardId, [noteId+skill]",
       schedules: "skillCardId, dueAt, [state+dueAt], revision",
       reviewEvents: "id, skillCardId, occurredAt, localDate",
@@ -668,7 +670,7 @@ export interface ImportReport {
 }
 ```
 
-Write imported records under a new deck ID. In the final Dexie transaction, set `settings.activeDeckId` only after required note/media validation succeeds. On failure, delete the incoming deck's staged records without touching the active deck.
+Write imported records under a new deck ID, including filtered `ankiCards` scheduling snapshots and deck-scoped imported reviews needed by the later Fresh/Continue choice. In the final Dexie transaction, set `settings.activeDeckId` only after required note/media validation succeeds. On failure, roll back the complete transaction without touching the active deck.
 
 - [ ] **Step 4: Emit worker progress without blocking React**
 
@@ -805,7 +807,7 @@ Expected: FAIL because the initializer and choice component do not exist.
 
 - [ ] **Step 3: Implement explicit progress choice behavior**
 
-Fresh mode creates `reading` and `meaning` skill cards and New schedules at the import timestamp. Continue mode converts Anki state, due, interval, repetitions, lapses, stability, difficulty, and last review into two baseline schedules. It stores Anki revlog rows in `ankiReviews` once and records `seededFromAnki: true` on the two schedules.
+Fresh mode reads the persisted `ankiCards` snapshots, creates `reading` and `meaning` skill cards with New schedules at the import timestamp, and removes deck-scoped staged `ankiReviews` so imported history does not affect Fresh analytics. Continue mode converts the persisted Anki state, due, interval, repetitions, lapses, stability, difficulty, and last review into two baseline schedules, retains the already imported deck-scoped revlog rows exactly once, and records `seededFromAnki: true` on the two schedules.
 
 The UI must disable Continue with the message `Export the deck from Anki with scheduling information, then import that package.` when scheduling is absent.
 

@@ -227,6 +227,22 @@ interface NoteRecord {
   sentenceAudioMediaId?: string;
 }
 
+interface ImportedAnkiCardRecord {
+  id: string;                  // `${deckId}:${sourceAnkiCardId}`
+  deckId: string;
+  noteId: string;              // local NoteRecord id
+  sourceAnkiCardId: string;
+  state: number;
+  queue: number;
+  due: number;
+  interval: number;
+  reps: number;
+  lapses: number;
+  stability?: number;
+  difficulty?: number;
+  lastReviewAt?: string;
+}
+
 interface SkillCardRecord {
   id: string;                  // `${noteId}:${skill}`
   noteId: string;
@@ -270,6 +286,7 @@ interface ReviewEventRecord {
 
 interface ImportedAnkiReviewRecord {
   id: string;                  // original revlog id
+  deckId: string;
   sourceAnkiCardId: string;
   occurredAt: string;
   rating: number;
@@ -323,7 +340,7 @@ The import fails without partial writes when:
 
 - ZIP/package metadata is invalid.
 - No Kaishi 1.5k notetype can be mapped.
-- Required `Word`, `Word Reading`, `Word Meaning`, or `Sentence` fields are absent.
+- Required `Word`, `Word Reading`, `Word Meaning`, or `Sentence` field definitions are absent. Individual notes may leave one of these values empty (the official welcome card does this) and remain importable.
 - Duplicate stable IDs conflict.
 - The collection cannot be opened read-only.
 
