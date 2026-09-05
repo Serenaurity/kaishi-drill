@@ -1,0 +1,133 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FSRS scheduler adapter > produces deterministic transitions from learning 1`] = `
+[
+  {
+    "dueAt": "2026-09-05T00:01:00.000Z",
+    "lapses": 0,
+    "ratingState": "learning",
+    "reps": 4,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-05T00:06:00.000Z",
+    "lapses": 0,
+    "ratingState": "learning",
+    "reps": 4,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-10T00:00:00.000Z",
+    "lapses": 0,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 5,
+  },
+  {
+    "dueAt": "2026-09-12T00:00:00.000Z",
+    "lapses": 0,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 7,
+  },
+]
+`;
+
+exports[`FSRS scheduler adapter > produces deterministic transitions from new 1`] = `
+[
+  {
+    "dueAt": "2026-09-05T00:01:00.000Z",
+    "lapses": 0,
+    "ratingState": "learning",
+    "reps": 1,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-05T00:06:00.000Z",
+    "lapses": 0,
+    "ratingState": "learning",
+    "reps": 1,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-05T00:10:00.000Z",
+    "lapses": 0,
+    "ratingState": "learning",
+    "reps": 1,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-13T00:00:00.000Z",
+    "lapses": 0,
+    "ratingState": "review",
+    "reps": 1,
+    "scheduledDays": 8,
+  },
+]
+`;
+
+exports[`FSRS scheduler adapter > produces deterministic transitions from relearning 1`] = `
+[
+  {
+    "dueAt": "2026-09-05T00:10:00.000Z",
+    "lapses": 1,
+    "ratingState": "relearning",
+    "reps": 4,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-05T00:15:00.000Z",
+    "lapses": 1,
+    "ratingState": "relearning",
+    "reps": 4,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-10T00:00:00.000Z",
+    "lapses": 1,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 5,
+  },
+  {
+    "dueAt": "2026-09-12T00:00:00.000Z",
+    "lapses": 1,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 7,
+  },
+]
+`;
+
+exports[`FSRS scheduler adapter > produces deterministic transitions from review 1`] = `
+[
+  {
+    "dueAt": "2026-09-05T00:10:00.000Z",
+    "lapses": 1,
+    "ratingState": "relearning",
+    "reps": 4,
+    "scheduledDays": 0,
+  },
+  {
+    "dueAt": "2026-09-14T00:00:00.000Z",
+    "lapses": 0,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 9,
+  },
+  {
+    "dueAt": "2026-09-18T00:00:00.000Z",
+    "lapses": 0,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 13,
+  },
+  {
+    "dueAt": "2026-09-25T00:00:00.000Z",
+    "lapses": 0,
+    "ratingState": "review",
+    "reps": 4,
+    "scheduledDays": 20,
+  },
+]
+`;

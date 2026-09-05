@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { createImportClient, type ImportClient } from "./import-client";
+import { ProgressChoice } from "./ProgressChoice";
 import type { ImportProgress, ImportReport } from "./types";
 
 interface ImportPageProps {
@@ -151,6 +152,10 @@ export function ImportPage({ client }: ImportPageProps) {
                   </ul>
                 </details>
               )}
+              <ProgressChoice
+                deckId={report.deckId}
+                schedulingAvailable={report.schedulingAvailable}
+              />
             </div>
           )}
         </div>

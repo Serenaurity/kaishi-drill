@@ -5,6 +5,9 @@ import { AppShell } from "./AppShell";
 const ImportPage = lazy(() =>
   import("../features/import/ImportPage").then((module) => ({ default: module.ImportPage })),
 );
+const StudyPage = lazy(() =>
+  import("../features/study/StudyPage").then((module) => ({ default: module.StudyPage })),
+);
 
 function Home() {
   return (
@@ -26,15 +29,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/import" element={<ImportPage />} />
-          <Route
-            path="/study"
-            element={
-              <section>
-                <h1>Vocabulary</h1>
-                <p>Import a deck to begin studying.</p>
-              </section>
-            }
-          />
+          <Route path="/study" element={<StudyPage />} />
           <Route
             path="/kana"
             element={
