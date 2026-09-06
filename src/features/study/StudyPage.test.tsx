@@ -65,6 +65,19 @@ it("requires a typed answer before enabling rating buttons", async () => {
   expect(screen.getByRole("button", { name: /good/i })).toBeEnabled();
 });
 
+it("keeps sentence and audio controls visible without duplicating them after reveal", async () => {
+  const user = userEvent.setup();
+  render(<StudyPage session={fakeSession()} />);
+
+  expect(await screen.findByText("学校へ行く。")).toBeVisible();
+  expect(screen.getAllByRole("button", { name: "Play word audio" })).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: "Play sentence audio" })).toHaveLength(1);
+  await user.type(screen.getByLabelText(/your answer/i), "gakkou");
+  await user.click(screen.getByRole("button", { name: /check/i }));
+  expect(screen.getAllByRole("button", { name: "Play word audio" })).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: "Play sentence audio" })).toHaveLength(1);
+});
+
 it("uses rating shortcuts only after reveal", async () => {
   const user = userEvent.setup();
   const session = fakeSession();

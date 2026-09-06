@@ -1,102 +1,95 @@
 # Kaishi Drill
 
-A self-contained, single-file HTML prototype that turns passive Anki review into
-active recall. Built from the ["Anki Translation Practice App with Local AI"](.)
-idea and a real deck export (`Kaishi 1.5k`), it asks you to type the answer
-before revealing it, instead of flipping a card and self-grading.
+Kaishi Drill is a private, offline-first web app for active Japanese recall. It imports a modern Kaishi 1.5k Anki package locally, asks you to type readings or English meanings, schedules the two skills independently with FSRS, preserves package media, and includes a separate DJT-inspired Kana Trainer.
 
-Live version: https://claude.ai/code/artifact/e84452de-1f7b-4893-b7e1-4fbaee516a77
+The current release is a standalone browser app. It does not require Anki while studying and does not write back to Anki.
 
-## What it does
+## Supported workflow
 
-Three drill modes, one page, no build step, no server:
+- Import `.apkg` or `.colpkg` exported from the Kaishi 1.5k deck.
+- Choose **Start Fresh** for new Kaishi Drill schedules or **Continue from Anki** to seed usable history from an export that includes scheduling information.
+- Type Japanese readings in kana or accepted romaji variants.
+- Type any accepted English meaning, including comma-separated alternatives and optional leading `to` on verbs. English is the only translation language supported in this release.
+- See the example sentence and play word or sentence audio before submitting an answer; imported media stays local in IndexedDB.
+- Follow the package's original New-card order. Informational notes without a reading or meaning are kept in the import but excluded from drills.
+- Set daily New and Review card limits in Settings. Defaults are Anki's 20 New / 200 Review recommendation; because Reading and Meaning are separate cards, 20 New usually introduces about 10 words.
+- Preview currently scheduled reviews for the next 14 days on the dashboard. The forecast updates as answers change the schedule.
+- Practice Hiragana and Katakana separately from vocabulary scheduling, including Basic, Dakuten, Handakuten and Yōon groups.
+- Install the PWA and reopen its application shell without a network connection.
+- Export a JSON progress backup before resetting or moving to another browser profile.
 
-- **Reading** — see a word, type the reading (kana or romaji — Hepburn and
-  Kunrei-shiki variants both accepted, so no Japanese IME is required).
-  Multi-reading words (e.g. 人 → ひと／じん) accept any valid reading.
-- **Translate** — see a word, type an English gloss. Graded with a
-  keyword-overlap heuristic (a deliberate stand-in for real LLM grading —
-  see "Known limitations" below).
-- **Kana** — DJT-style hiragana/katakana speed recognition drill across the
-  full gojuon + dakuten/handakuten + youon set.
+Imported package bytes and media are processed in the browser. Kaishi Drill has no package-upload or cloud-sync endpoint.
 
-Real audio playback (word + example sentence) is embedded as base64 data URIs
-pulled straight from the source deck, so it sounds like Anki, not TTS.
+## Local development
 
-A GitHub-style contribution heatmap (26 weeks, `localStorage`-backed) tracks
-daily rep counts, active days, and streak.
+Requires Node.js 20 or newer.
 
-## Files
-
-- `kaishi_drill.html` — the finished, self-contained prototype. Open it
-  directly in a browser, no server needed.
-- `kaishi_drill_template.html` — the source template. Edit this, not the
-  built file. Contains an `__ITEMS_JSON__` placeholder for the sample data.
-- `build_final_html.py` — splices `data/sample_items_audio.json` into the
-  template to produce `kaishi_drill.html`. Requires a real Python
-  interpreter (see gotcha below).
-- `data/sample_items_audio.json` — 36 sample notes (word, reading, meaning,
-  sentence, sentence meaning, word/sentence audio as base64) extracted from
-  the user's own `Kaishi.1.5k.apkg` deck.
-- `tests/` — Node.js DOM-stub test harnesses. They extract the *exact*
-  shipped `<script>` out of `kaishi_drill.html` (via regex) and execute it
-  against a hand-rolled DOM stub, driving it through real dispatched events.
-  This verifies the actual production code, not a reimplementation.
-  - `node_test.js` — reading-mode romaji/kana drive, translate mode,
-    audio wiring.
-  - `node_test2.js` — kana-mode drill, activity/heatmap tracking,
-    regression check on reading + translate.
-  - `node_test_sokuon.js` — targeted unit tests for sokuon (っ) and
-    chōonpu (ー) romaji resolution.
-
-## Rebuilding
-
-```
-node tests/node_test_sokuon.js
-node tests/node_test.js
-node tests/node_test2.js
+```powershell
+npm ci
+npm run dev
 ```
 
-To regenerate `kaishi_drill.html` after editing the template, run
-`build_final_html.py` with a real Python interpreter (on this machine the
-bare `python`/`python3` on PATH is a non-functional Windows Store shim —
-invoke the actual interpreter directly, e.g.
-`C:\Users\seren\AppData\Local\Programs\Python\Python311\python.exe build_final_html.py`).
+Open the local URL printed by Vite. For a production build:
 
-## Known limitations
+```powershell
+npm run build
+npm run preview
+```
 
-- **Translation grading is a keyword-overlap heuristic**, not real
-  comprehension checking. It's an explicit stand-in for what the original
-  idea called for (local-AI grading) — good enough to prototype the UX,
-  not good enough to ship as-is.
-- **Activity data is `localStorage`-only** — per-device, per-browser, not
-  synced. The platform's live `artifact.publish()` capability was
-  deliberately not used for this, because it triggers a full-page reload of
-  every open view on every write, which is unacceptable UX for a
-  rapid-fire quiz that persists after every answer.
-- Only 36 sample notes are embedded, not the full 1,501-word deck.
+## Exporting from Anki
 
-## Standalone web app roadmap
+Export the Kaishi 1.5k deck as a modern Anki package. Include media. Also include scheduling information if you want **Continue from Anki**; without it, use **Start Fresh**.
 
-The approved direction is a modular, offline-first web app that imports the
-user's Anki package locally, supports either fresh or continued progress,
-uses FSRS for typed reading/English-meaning reviews, preserves the deck's
-images and audio, and includes a separate DJT-inspired Kana Trainer.
+Fresh mode discards imported Anki review history and creates all reading and meaning schedules as new. Continue mode imports available review history and seeds valid scheduling state; invalid or missing scheduling fields fall back safely to new cards with a warning.
 
-- [Product and architecture design](docs/superpowers/specs/2026-09-05-kaishi-drill-standalone-webapp-design.md)
-- [Test-driven implementation plan](docs/superpowers/plans/2026-09-05-kaishi-drill-webapp.md)
+Kaishi Drill never modifies the source package.
 
-## Scope
+## Progress backup and reset
 
-This is deliberately Kaishi-only for now — hardcoded to the Kaishi 1.5k
-notetype's field names and to Japanese-specific reading logic (kana/romaji
-conversion, sokuon/chōonpu handling). See the field-mapping and
-grading-logic notes above for exactly what's coupled to it.
+Open **Settings → Export progress backup** before clearing data. A backup contains schedules, review history, Kana mastery, activity and settings. It deliberately excludes imported notes and media.
 
-The intent is to eventually generalize this to work with any Anki deck,
-any language. That's not implemented yet — no point abstracting before a
-second real deck exists to design against. When that happens, the two
-things to change are: (1) a field-mapping step instead of hardcoded field
-names in `build_final_html.py`, so any notetype's fields can be assigned
-to word/reading/meaning/audio; (2) gating the kana/romaji grading logic
-behind "is this a Japanese deck" instead of assuming it always applies.
+To restore into another clean browser profile:
+
+1. Import and initialize the exact same package.
+2. Open **Settings → Progress backup file**.
+3. Select the JSON backup and confirm the replacement.
+
+The package SHA-256 and card identities must match. **Reset progress** preserves imported notes and media but requires the deck to be initialized again before a backup can be restored. **Reset all local data** removes the complete local deck.
+
+## Verification
+
+```powershell
+npm run typecheck
+npm run test:run
+npm run test:e2e
+npm run build
+```
+
+`npm run test:e2e` creates a synthetic, non-sensitive Anki package before running Chromium tests. The release gate covers Fresh and Continue flows, typed review persistence, unsafe markup, missing/remote media, duplicate-tab conflicts, Kana focus mode, keyboard shortcuts, backup/restore, critical axe checks, reduced motion and offline reload.
+
+Kana answers also support a keyboard-first loop: a correct Enter submission advances immediately; an incorrect answer reveals the accepted romaji and focuses **Next**, where Enter advances.
+
+The real-deck checks are intentionally separate: [private deck acceptance](docs/acceptance/private-deck-checklist.md). Private packages, extracted media and reports are ignored by Git.
+
+## Boundaries
+
+- No Anki write-back, AnkiWeb integration or cloud sync.
+- No account system or server-side deck storage.
+- No local-AI semantic grader; English grading uses explicit normalized aliases and conservative keyword matching.
+- Kaishi 1.5k field mapping is supported; arbitrary Anki note types are not.
+- A Windows `.exe` is Phase 4 work and starts only after the browser release is approved.
+
+## Open assets
+
+Kana stroke-order SVGs are a modified subset of KanjiVG. Release and license details are in [public/kana-strokes/NOTICE.md](public/kana-strokes/NOTICE.md).
+
+## Legacy prototype
+
+The original single-file prototype remains available as an immediate rollback/reference path:
+
+- `kaishi_drill.html`
+- `kaishi_drill_template.html`
+- `build_final_html.py`
+- `data/sample_items_audio.json`
+
+The modular app under `src/` is the supported implementation. Product design and the phased implementation record remain in `docs/superpowers/`.

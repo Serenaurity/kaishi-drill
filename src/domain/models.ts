@@ -52,6 +52,7 @@ export interface SkillCardRecord {
   id: string;
   noteId: string;
   sourceAnkiCardId: string;
+  sourceNewPosition?: number;
   skill: Skill;
   createdAt: string;
 }

@@ -24,6 +24,8 @@ const note: NoteRecord = {
   pitchAccentNotes: "",
   frequency: "",
   pictureMediaId: "picture",
+  wordAudioMediaId: "word-audio",
+  sentenceAudioMediaId: "sentence-audio",
 };
 const card: SkillCardRecord = {
   id: "note:reading",
@@ -62,4 +64,15 @@ it("replaces an image that fails to load with an explicit unavailable state", as
   fireEvent.error(image);
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(screen.getByText("Image unavailable")).toBeVisible();
+});
+
+it("shows the Japanese sentence and both audio controls on the prompt", async () => {
+  const repository: MediaRepository = {
+    getBlob: vi.fn().mockResolvedValue(new Blob(["audio"], { type: "audio/mpeg" })),
+  };
+  render(<PromptCard prompt={prompt} repository={repository} />);
+
+  expect(await screen.findByText("語を学ぶ。")).toBeVisible();
+  expect(await screen.findByRole("button", { name: "Play word audio" })).toBeVisible();
+  expect(await screen.findByRole("button", { name: "Play sentence audio" })).toBeVisible();
 });

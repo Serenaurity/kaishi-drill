@@ -28,12 +28,12 @@ Both modules share one local profile, activity history, streak, settings, and da
 
 ### Kaishi deck and Anki progress
 
-Read-only inspection of the user's data verified:
+Read-only inspection of `private-data/Kaishi.1.5k.apkg` on 2026-09-06 verified:
 
 - 1,501 notes and 1,501 Anki cards.
-- 100 reviewed cards with FSRS `stability` and `difficulty` metadata.
-- 1,401 new cards.
-- 383 historical review-log entries: 88 `Again` and 295 `Good` ratings.
+- All 1,501 cards are New; the package contains no historical review-log entries or resumable Anki progress.
+- Every New card has a unique Anki `due` position. Positions run from `3` through `1,504`, with `1,380` absent; gaps remain valid and must not be renumbered.
+- The deck uses sequential insertion, a default limit of `20` New cards/day, and a default limit of `200` reviews/day.
 - 4,354 media-manifest items: 1,382 images and 2,972 audio files.
 - 1,500 notes reference a picture.
 - 1,499 notes reference word audio; 1,500 reference sentence audio.
@@ -98,7 +98,8 @@ The choice is recorded in import metadata and can be replaced only by an explici
 The home screen shows:
 
 - Due vocabulary reviews.
-- New vocabulary allowance for the day.
+- New-card allowance for the day, using Anki semantics: Reading and Meaning each count as one card.
+- A 14-day Future Due forecast of currently scheduled non-New cards. The forecast excludes overdue cards and states that future answers and newly introduced cards can change it.
 - Kana mistakes due for focused practice.
 - Current streak and today's completed attempts.
 - Entry points for Vocabulary, Kana Trainer, Import/Backup, and Settings.
@@ -110,12 +111,14 @@ Each Kaishi note produces two independently scheduled skill cards:
 - `reading`: show the Japanese word and ask for kana or accepted romaji.
 - `meaning`: show the Japanese word and ask for an English meaning.
 
-The prompt may display the deck picture when available. Word audio is user-triggered before submission; sentence audio and the example sentence appear after submission by default. Settings may enable automatic playback.
+Imported informational notes that lack either a usable Reading or English Meaning remain in the local deck for provenance but do not produce study skill cards. This excludes the package's leading Welcome card and leaves 1,500 studyable vocabulary notes.
+
+Before submission, the prompt displays the deck picture and Japanese example sentence when available, plus user-triggered controls for word audio and sentence audio. Audio does not autoplay. Missing media uses the existing stable unavailable state.
 
 Submission flow:
 
 1. Normalize and grade the typed answer.
-2. Reveal the canonical answer, sentence, picture, pitch accent, and audio controls.
+2. Reveal the canonical answer, English sentence meaning, furigana, pitch accent, notes, and remaining answer-side details without duplicating the prompt audio controls.
 3. Suggest `Again`, `Hard`, or `Good` from the grade.
 4. Let the learner select any of `Again`, `Hard`, `Good`, or `Easy`.
 5. Atomically append a review event and update the schedule.
@@ -133,6 +136,7 @@ Kana Trainer is a separate route with shared activity tracking. It includes:
 - Randomized prompts and optional font variation.
 - Typed romaji answers with accepted variants.
 - Immediate correction, per-kana error counts, accuracy, and response time.
+- Any correct submission (Enter or Check) records the attempt and advances immediately. An incorrect submission reveals the accepted romaji; pressing Enter again or choosing Next advances to the next prompt.
 - Focus mode that prioritizes recent mistakes.
 - Optional Japanese speech synthesis when a local `ja-JP` voice is available.
 - Stroke-order viewing from a pinned, attributed KanjiVG dataset release; no assets are copied from DJT Kana.
@@ -247,6 +251,7 @@ interface SkillCardRecord {
   id: string;                  // `${noteId}:${skill}`
   noteId: string;
   sourceAnkiCardId: string;
+  sourceNewPosition?: number;  // Anki cards.due while the source card is New
   skill: Skill;
   createdAt: string;
 }
@@ -384,10 +389,10 @@ Defaults:
 - Short-term learning: enabled.
 - Learning steps: `1m, 10m`.
 - Relearning step: `10m`.
-- Daily new-card limit: `20` skill cards.
+- Daily new-card limit: `20` skill cards, matching Anki's card-count semantics. Because each Kaishi note creates Reading and Meaning cards, this normally introduces about 10 vocabulary notes/day.
 - Daily review limit: `200` skill cards.
 
-Imported parameters replace defaults only after they pass count/range validation and the importer records their provenance.
+Settings exposes both limits as labeled numeric controls. `0` pauses that category, the default values are presented as the recommended Anki-compatible preset, and changes apply to the remaining allowance for the current local day. Imported parameters replace defaults only after they pass count/range validation and the importer records their provenance.
 
 ### 9.2 Queue ordering
 
@@ -395,9 +400,9 @@ For each session:
 
 1. Overdue learning/relearning cards.
 2. Due review cards, ordered by due time then lower retrievability.
-3. New cards up to the daily limit, ordered by Kaishi frequency and stable ID.
+3. New cards up to the daily limit, ordered by ascending imported Anki New position (`cards.due`) and then stable ID. Both Kaishi skill cards inherit their source card's position.
 
-Reading and meaning cards from the same note are not shown consecutively when another due card is available. A deterministic seeded tie-breaker makes tests reproducible while avoiding a fixed daily order.
+Reading and Meaning cards from the same note are not shown consecutively when another due card is available. Missing or invalid source positions fall back to stable Anki card/note identity; imported position gaps are preserved.
 
 ### 9.3 Atomic answer transaction
 
@@ -433,7 +438,7 @@ The importer derives explicit aliases from semicolon/comma-separated glosses and
 3. Token-order-insensitive exact phrase match for multiword aliases.
 4. A conservative edit-distance allowance for a single likely typo.
 
-Keyword overlap alone cannot produce `correct`. Unrecognized paraphrases are shown as `close` and require self-rating. The first release does not call an LLM or network API.
+Each comma-, semicolon-, slash-, or pipe-separated gloss is an independent accepted answer after parenthetical notes are removed. For an infinitive gloss, both `to welcome` and `welcome` are accepted. Thus either `lover` or `sweetheart` passes for `lover, sweetheart`, and any one of `to welcome`, `to go out to meet`, or `to invite` passes independently. Keyword overlap alone cannot produce `correct`. Unrecognized paraphrases are shown as `close` and require self-rating. The first release does not call an LLM or network API.
 
 ### 10.3 Suggested rating
 
@@ -486,11 +491,14 @@ Automated checks must cover:
 - Imported schedule/card-data conversion and rating mapping.
 - Deterministic FSRS transitions for fixed dates and parameters.
 - Queue ordering, daily limits, sibling separation, and timezone boundaries.
+- Imported Anki New-position preservation, including non-contiguous positions.
 - Reading normalization including sokuon/chōonpu.
-- English exact, typo, close, and incorrect cases.
+- English exact aliases, comma-separated glosses, infinitives with optional leading `to`, typo, close, and incorrect cases.
 - Atomic persistence, migrations, backup/restore, and duplicate-tab conflict.
 - Media playback and object-URL cleanup.
-- Kana selection, variants, mistake focus, and mastery updates.
+- Kana selection, variants, mistake focus, mastery updates, immediate advance after a correct submission, and Enter-to-continue after an incorrect answer.
+- Persistent New/review limits and a timezone-correct 14-day Future Due forecast.
+- Sentence and both audio controls being available before vocabulary submission without duplicate controls after reveal.
 - Keyboard and screen-reader basics.
 - Offline reload after a successful install/import.
 
@@ -500,7 +508,9 @@ Manual validation against the user's private package must verify, without commit
 - 1,382 image files and 2,972 audio files discovered.
 - Picture/word-audio/sentence-audio references resolve at the verified counts.
 - Start Fresh produces no imported due schedules.
-- Continue preserves the verified 100 reviewed-card baselines and 383 historical reviews.
+- Continue is disabled for this package because it contains 1,501 New cards and no review history.
+- New cards follow the package's unique ascending positions (`3` to `1,504`, with `1,380` absent).
+- The informational Welcome note at position `3` is retained but excluded from study; the first studyable word is `私` at position `4`.
 - Refreshing and closing/reopening the browser preserves the current card state and progress.
 
 ## 15. Delivery phases

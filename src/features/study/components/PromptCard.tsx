@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AudioButton } from "../../media/AudioButton";
 import type { MediaRepository } from "../../media/media-repository";
 import { useMediaUrl } from "../../media/useMediaUrl";
 import type { StudyPrompt } from "../study-session";
@@ -29,6 +30,21 @@ export function PromptCard({ prompt, repository }: PromptCardProps) {
         )}
       </div>
       <p id="study-word" className="prompt-word" lang="ja">{prompt.note.word}</p>
+      {prompt.note.sentence && (
+        <p className="prompt-sentence" lang="ja">{prompt.note.sentence}</p>
+      )}
+      <div className="audio-row" aria-label="Pronunciation">
+        <AudioButton
+          label="Play word audio"
+          mediaId={prompt.note.wordAudioMediaId}
+          repository={repository}
+        />
+        <AudioButton
+          label="Play sentence audio"
+          mediaId={prompt.note.sentenceAudioMediaId}
+          repository={repository}
+        />
+      </div>
       <p className="prompt-direction">
         {prompt.card.skill === "reading"
           ? "Type the Japanese reading in kana or romaji."

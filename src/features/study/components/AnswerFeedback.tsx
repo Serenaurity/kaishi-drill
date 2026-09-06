@@ -1,12 +1,9 @@
-import type { MediaRepository } from "../../media/media-repository";
-import { AudioButton } from "../../media/AudioButton";
 import type { GradeResult } from "../grading/types";
 import type { StudyPrompt } from "../study-session";
 
 interface AnswerFeedbackProps {
   prompt: StudyPrompt;
   feedback: GradeResult;
-  repository: MediaRepository;
 }
 
 function Detail({ label, value, lang }: { label: string; value: string; lang?: string }) {
@@ -19,7 +16,7 @@ function Detail({ label, value, lang }: { label: string; value: string; lang?: s
   );
 }
 
-export function AnswerFeedback({ prompt, feedback, repository }: AnswerFeedbackProps) {
+export function AnswerFeedback({ prompt, feedback }: AnswerFeedbackProps) {
   const label = feedback.grade === "correct" ? "Correct" : feedback.grade === "close" ? "Close" : "Incorrect";
   const canonical = prompt.card.skill === "reading" ? prompt.note.reading : prompt.note.meaning;
   return (
@@ -44,10 +41,6 @@ export function AnswerFeedback({ prompt, feedback, repository }: AnswerFeedbackP
         <Detail label="Pitch notes" value={prompt.note.pitchAccentNotes} />
         <Detail label="Notes" value={prompt.note.notes} />
       </dl>
-      <div className="audio-row">
-        <AudioButton label="Play word audio" mediaId={prompt.note.wordAudioMediaId} repository={repository} />
-        <AudioButton label="Play sentence audio" mediaId={prompt.note.sentenceAudioMediaId} repository={repository} />
-      </div>
     </section>
   );
 }

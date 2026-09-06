@@ -39,6 +39,12 @@ function stateFromAnki(value: number): ScheduleRecord["state"] {
   return "new";
 }
 
+function newPositionFromAnki(card?: ImportedAnkiCardRecord): number | undefined {
+  return card?.state === 0 && Number.isSafeInteger(card.due) && card.due >= 0
+    ? card.due
+    : undefined;
+}
+
 function dueFromAnkiCard(card: ImportedAnkiCardRecord, importedAt: Date): Date {
   if ((card.state === 1 || card.state === 3) && card.due > 1_000_000_000) {
     const due = new Date(card.due * 1_000);
@@ -133,12 +139,14 @@ export async function initializeProgress(
 
   for (const note of notes) {
     const source = sourceByNote.get(note.id);
+    if (!note.reading.trim() || !note.meaning.trim()) continue;
     for (const skill of ["reading", "meaning"] as const) {
       const id = `${note.id}:${skill}`;
       skillCards.push({
         id,
         noteId: note.id,
         sourceAnkiCardId: source?.sourceAnkiCardId ?? "",
+        sourceNewPosition: newPositionFromAnki(source),
         skill,
         createdAt: request.now.toISOString(),
       });

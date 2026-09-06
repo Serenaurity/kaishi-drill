@@ -31,12 +31,17 @@ function result(
 }
 
 export function deriveEnglishAliases(gloss: string): string[] {
-  const aliases = gloss
+  const explicitAliases = gloss
     .normalize("NFKC")
     .replace(/\([^)]*\)/g, " ")
     .split(/[;,，；/／|]+/)
     .map((value) => normalizeEnglish(value))
     .filter(Boolean);
+  const aliases = explicitAliases.flatMap((value) =>
+    value.startsWith("to ") && value.length > 3
+      ? [value, value.slice(3)]
+      : [value],
+  );
   return [...new Set(aliases)];
 }
 

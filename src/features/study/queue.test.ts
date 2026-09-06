@@ -5,11 +5,16 @@ import { createNewSchedule } from "./scheduler";
 
 const NOW = new Date("2026-09-05T12:00:00.000Z");
 
-function skill(id: string, noteId = id.split(":")[0]!): SkillCardRecord {
+function skill(
+  id: string,
+  noteId = id.split(":")[0]!,
+  sourceNewPosition?: number,
+): SkillCardRecord {
   return {
     id,
     noteId,
     sourceAnkiCardId: id,
+    sourceNewPosition,
     skill: id.endsWith(":meaning") ? "meaning" : "reading",
     createdAt: "2026-09-01T00:00:00.000Z",
   };
@@ -107,7 +112,7 @@ describe("study queue", () => {
     expect(buildStudyQueue(input(cards, schedules))[0]).toBe("weak:reading");
   });
 
-  it("is stable for one seed and changes new-card order for another seed", () => {
+  it("keeps fallback New-card order stable across daily seeds", () => {
     const cards = Array.from({ length: 12 }, (_, index) => skill(`new-${index}:reading`));
     const schedules = cards.map((card) => schedule(card.id, "new"));
     const first = buildStudyQueue(input(cards, schedules, { seed: "day-a" }));
@@ -115,7 +120,24 @@ describe("study queue", () => {
     const changed = buildStudyQueue(input(cards, schedules, { seed: "day-b" }));
 
     expect(first).toEqual(repeated);
-    expect(changed).not.toEqual(first);
+    expect(changed).toEqual(first);
+  });
+
+  it("orders New cards by imported Anki position and preserves position gaps", () => {
+    const cards = [
+      skill("second:reading", "second", 1381),
+      skill("first:meaning", "first", 1379),
+      skill("second:meaning", "second", 1381),
+      skill("first:reading", "first", 1379),
+    ];
+    const schedules = cards.map((card) => schedule(card.id, "new"));
+
+    expect(buildStudyQueue(input(cards, schedules))).toEqual([
+      "first:meaning",
+      "second:meaning",
+      "first:reading",
+      "second:reading",
+    ]);
   });
 
   it("computes the local day across a Bangkok midnight boundary", () => {

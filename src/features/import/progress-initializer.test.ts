@@ -33,7 +33,7 @@ function note(id: string): NoteRecord {
   };
 }
 
-function card(noteId: string, reviewed = false): ImportedAnkiCardRecord {
+function card(noteId: string, reviewed = false, due = 3): ImportedAnkiCardRecord {
   return {
     id: `${DECK_ID}:card-${noteId}`,
     deckId: DECK_ID,
@@ -41,7 +41,7 @@ function card(noteId: string, reviewed = false): ImportedAnkiCardRecord {
     sourceAnkiCardId: `card-${noteId}`,
     state: reviewed ? 2 : 0,
     queue: reviewed ? 2 : 0,
-    due: 0,
+    due,
     interval: reviewed ? 12 : 0,
     reps: reviewed ? 4 : 0,
     lapses: reviewed ? 1 : 0,
@@ -81,7 +81,11 @@ async function setup(options: { schedulingAvailable: boolean; notes?: number }) 
     schedulingAvailable: options.schedulingAvailable,
   };
   const notes = Array.from({ length: options.notes ?? 1 }, (_, index) => note(`${index + 1}`));
-  const cards = notes.map((value, index) => card(value.ankiNoteId, options.schedulingAvailable && index === 0));
+  const cards = notes.map((value, index) => card(
+    value.ankiNoteId,
+    options.schedulingAvailable && index === 0,
+    index + 3,
+  ));
   await db.decks.put(deck);
   await db.imports.put(imported);
   await db.notes.bulkPut(notes);
@@ -118,6 +122,25 @@ describe("progress initialization", () => {
     expect(report.skillCardsCreated).toBe(4);
     expect(await db.schedules.where("state").equals("new").count()).toBe(4);
     expect(await db.ankiReviews.count()).toBe(0);
+  });
+
+  it("copies each source New position to both generated skill cards", async () => {
+    const db = await setup({ schedulingAvailable: false, notes: 2 });
+    await initializeProgress({ deckId: DECK_ID, mode: "fresh", now: NOW }, db);
+
+    expect((await db.skillCards.orderBy("id").toArray()).map((value) => value.sourceNewPosition))
+      .toEqual([3, 3, 4, 4]);
+  });
+
+  it("retains informational notes without creating unanswerable skill cards", async () => {
+    const db = await setup({ schedulingAvailable: false });
+    await db.notes.update(`${DECK_ID}:1`, { reading: "", meaning: "" });
+
+    const report = await initializeProgress({ deckId: DECK_ID, mode: "fresh", now: NOW }, db);
+
+    expect(report.skillCardsCreated).toBe(0);
+    expect(await db.notes.count()).toBe(1);
+    expect(await db.schedules.count()).toBe(0);
   });
 
   it("seeds both skills and stores imported reviews once in Continue mode", async () => {

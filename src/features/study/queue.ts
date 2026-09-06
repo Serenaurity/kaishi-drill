@@ -1,4 +1,8 @@
 import type { ScheduleRecord, SkillCardRecord } from "../../domain/models";
+import { localDateInTimeZone } from "../../domain/dates";
+import { seededHash } from "../../domain/seeded-order";
+
+export { localDateInTimeZone } from "../../domain/dates";
 
 export type SkillCardId = string;
 
@@ -20,32 +24,10 @@ export interface QueueInput {
 interface QueueItem {
   id: string;
   noteId: string;
+  sourceAnkiCardId: string;
+  sourceNewPosition?: number;
   schedule: ScheduleRecord;
   rank: number;
-}
-
-export function localDateInTimeZone(date: Date, timezone: string): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const value = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value;
-  return `${value("year")}-${value("month")}-${value("day")}`;
-}
-
-function seededHash(value: string): number {
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  hash ^= hash >>> 16;
-  hash = Math.imul(hash, 0x85ebca6b);
-  hash ^= hash >>> 13;
-  return hash >>> 0;
 }
 
 function retrievability(schedule: ScheduleRecord, now: Date): number {
@@ -60,6 +42,18 @@ function retrievability(schedule: ScheduleRecord, now: Date): number {
 
 function compareDue(a: QueueItem, b: QueueItem): number {
   return Date.parse(a.schedule.dueAt) - Date.parse(b.schedule.dueAt);
+}
+
+function compareNew(a: QueueItem, b: QueueItem): number {
+  const aPosition = Number.isSafeInteger(a.sourceNewPosition)
+    ? a.sourceNewPosition!
+    : Number.POSITIVE_INFINITY;
+  const bPosition = Number.isSafeInteger(b.sourceNewPosition)
+    ? b.sourceNewPosition!
+    : Number.POSITIVE_INFINITY;
+  return aPosition - bPosition ||
+    a.sourceAnkiCardId.localeCompare(b.sourceAnkiCardId, undefined, { numeric: true }) ||
+    a.id.localeCompare(b.id);
 }
 
 function separateSiblings(items: QueueItem[]): QueueItem[] {
@@ -102,7 +96,14 @@ export function buildStudyQueue(input: QueueInput): SkillCardId[] {
     const rank = schedule.state === "learning" || schedule.state === "relearning"
       ? 0
       : schedule.state === "review" ? 1 : 2;
-    return [{ id: card.id, noteId: card.noteId, schedule, rank }];
+    return [{
+      id: card.id,
+      noteId: card.noteId,
+      sourceAnkiCardId: card.sourceAnkiCardId,
+      sourceNewPosition: card.sourceNewPosition,
+      schedule,
+      rank,
+    }];
   });
 
   const tie = (item: QueueItem) => seededHash(`${input.seed}:${item.id}`);
@@ -120,7 +121,7 @@ export function buildStudyQueue(input: QueueInput): SkillCardId[] {
     .slice(0, Math.max(0, input.limits.reviewsPerDay - input.completedToday.reviews));
   const newCards = dueItems
     .filter((item) => item.rank === 2)
-    .sort((a, b) => tie(a) - tie(b) || a.id.localeCompare(b.id))
+    .sort(compareNew)
     .slice(0, Math.max(0, input.limits.newPerDay - input.completedToday.newCards));
 
   return separateSiblings([...learning, ...reviews, ...newCards]).map((item) => item.id);

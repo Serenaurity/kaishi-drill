@@ -13,6 +13,7 @@ import {
   type StudySession,
 } from "./study-session";
 import type { Rating } from "../../domain/models";
+import { setReviewInteractionActive } from "../../app/review-activity";
 
 interface StudyPageProps {
   session?: StudySession;
@@ -76,6 +77,12 @@ export function StudyPage({ session, mediaRepository }: StudyPageProps) {
   useEffect(() => {
     if (phase === "prompt") answerInput.current?.focus();
   }, [phase, prompt]);
+
+  useEffect(() => {
+    setReviewInteractionActive(Boolean(prompt) && (answer.length > 0 || phase === "revealed" || saving));
+  }, [answer, phase, prompt, saving]);
+
+  useEffect(() => () => setReviewInteractionActive(false), []);
 
   function reveal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -164,7 +171,7 @@ export function StudyPage({ session, mediaRepository }: StudyPageProps) {
         {error && <p id="study-error" className="field-error" role="alert">{error}</p>}
       </form>
       {phase === "revealed" && feedback && (
-        <AnswerFeedback prompt={prompt} feedback={feedback} repository={services.repository} />
+        <AnswerFeedback prompt={prompt} feedback={feedback} />
       )}
       <RatingBar
         intervals={prompt.intervals}
