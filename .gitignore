@@ -3,6 +3,8 @@ dist/
 playwright-report/
 test-results/
 *.apkg
+!decks/
+!decks/Kaishi.1.5k.apkg
 *.colpkg
 *.anki2
 *.anki21

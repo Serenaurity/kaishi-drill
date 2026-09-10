@@ -4,6 +4,17 @@ Kaishi Drill is a private, offline-first web app for active Japanese recall. It 
 
 The current release is a standalone browser app. It does not require Anki while studying and does not write back to Anki.
 
+## Bundled deck and provenance
+
+This repository bundles a user-provided Kaishi 1.5k Anki package at `decks/Kaishi.1.5k.apkg`. Its filename and byte size match the asset published with the official [Kaishi v2.2.2 release](https://github.com/donkuri/kaishi/releases/tag/v2.2.2): [release asset](https://github.com/donkuri/kaishi/releases/download/v2.2.2/Kaishi.1.5k.apkg). The checksum below is for the bundled copy.
+
+- Size: 102,048,125 bytes
+- SHA-256: `438B7F4210E399F5DF1DAA788550343F787DCEB2EE77D71BAEB835B22EE6C551`
+- Imported package contents: 1,501 notes, 1,382 images, and 2,972 audio files
+- The package is all-new and contains no review history.
+
+The upstream repository does not provide a LICENSE file. Do not assume that any license applying to this app's code also applies to the bundled deck content.
+
 ## Supported workflow
 
 - Import `.apkg` or `.colpkg` exported from the Kaishi 1.5k deck.
@@ -82,14 +93,3 @@ The real-deck checks are intentionally separate: [private deck acceptance](docs/
 ## Open assets
 
 Kana stroke-order SVGs are a modified subset of KanjiVG. Release and license details are in [public/kana-strokes/NOTICE.md](public/kana-strokes/NOTICE.md).
-
-## Legacy prototype
-
-The original single-file prototype remains available as an immediate rollback/reference path:
-
-- `kaishi_drill.html`
-- `kaishi_drill_template.html`
-- `build_final_html.py`
-- `data/sample_items_audio.json`
-
-The modular app under `src/` is the supported implementation. Product design and the phased implementation record remain in `docs/superpowers/`.

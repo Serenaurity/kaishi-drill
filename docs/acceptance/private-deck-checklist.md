@@ -1,10 +1,10 @@
-# Private Kaishi deck acceptance
+# Kaishi deck acceptance
 
-Run this checklist locally against a production build. Record only pass/fail and non-sensitive counts in `private-reports/kaishi-acceptance.md`; that directory is ignored by Git. Never copy the package, database, note text, extracted media or browser profile into the repository.
+Run this checklist locally against a production build. Record only pass/fail and non-sensitive counts in `private-reports/kaishi-acceptance.md`; that directory is ignored by Git. Do not copy private Anki exports, databases, note text, extracted media or browser profiles into the repository beyond the documented bundled package.
 
 ## Preparation
 
-- [ ] Export the Kaishi 1.5k package from Anki with media and scheduling information.
+- [ ] Verify the bundled package at `decks/Kaishi.1.5k.apkg` has size 102,048,125 bytes and SHA-256 `438B7F4210E399F5DF1DAA788550343F787DCEB2EE77D71BAEB835B22EE6C551`.
 - [ ] Run `npm ci`, `npm run test:run`, `npm run build` and `npm run test:e2e`; every command exits 0.
 - [ ] Run `npm run preview` and use the production URL printed by Vite.
 - [ ] Open browser developer tools and preserve the Network log before choosing the package.
@@ -57,9 +57,9 @@ Run this checklist locally against a production build. Record only pass/fail and
 
 ## Repository hygiene and rollback
 
-- [ ] No package, Anki database, extracted deck media or private report appears in `git status --short`.
+- [ ] No unapproved package, Anki database, extracted deck media or private report appears in `git status --short`; `decks/Kaishi.1.5k.apkg` is the only expected package.
 - [ ] `private-data/` and `private-reports/` remain ignored.
-- [ ] `kaishi_drill.html`, `kaishi_drill_template.html`, `build_final_html.py` and `data/sample_items_audio.json` are unchanged from the last approved baseline.
+- [ ] `decks/Kaishi.1.5k.apkg` matches the documented bundled-deck size and SHA-256.
 - [ ] The production `dist/` exists and is ignored.
 
 If an expected count differs, stop the release cutover and record only the mismatched counts and app version in the private report.
